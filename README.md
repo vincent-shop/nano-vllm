@@ -35,6 +35,34 @@ outputs = llm.generate(prompts, sampling_params)
 outputs[0]["text"]
 ```
 
+## OpenAI-Compatible Server
+
+Nano-vLLM now ships with a lightweight HTTP gateway that mirrors OpenAI's `/v1/completions` and `/v1/chat/completions` endpoints. The server wraps `LLM.generate`, so you can continue using the Python API locally while exposing the same model over the network when needed.
+
+```bash
+pip install -e .
+python -m nanovllm.server.main \
+  --model ~/huggingface/Qwen3-0.6B/ \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --metrics-endpoint /metrics  # optional
+```
+
+Key features:
+
+- FastAPI-based gateway with optional API key auth (`--api-key`).
+- SSE streaming compatible with OpenAI's clients; disable with `--disable-streaming`.
+- Built-in health probe (`/healthz` by default) and optional Prometheus metrics.
+- Backpressure with configurable concurrency (`--max-concurrent-requests`) and queue limits (`--max-queue`).
+
+With the server running you can send OpenAI-formatted requests, for example using `curl`:
+
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"Qwen3-0.6B","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
 ## Benchmark
 
 See `bench.py` for benchmark.
